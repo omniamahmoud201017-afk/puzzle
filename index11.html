@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة توصيل أجزاء الأشكال الهندسية</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for playful Arabic typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #f3e8ff 100%);
+            min-height: 100vh;
+            user-select: none;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between p-4 md:p-6">
+
+    <!-- Header Section -->
+    <header class="w-full max-w-5xl bg-white/90 backdrop-blur-md rounded-3xl p-4 md:p-6 mb-6 card-shadow flex flex-wrap items-center justify-between gap-4 border-4 border-sky-200">
+        <div class="flex items-center gap-3">
+            <div class="bg-sky-500 text-white w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-xl md:text-2xl font-black shadow-md">
+                شكل
+            </div>
+            <div>
+                <h1 class="text-xl md:text-3xl font-black text-slate-800">لعبة الأشكال الهندسية</h1>
+                <p class="text-xs md:text-sm text-slate-500 font-semibold">اختر النصف الأيسر ثم طابقه مع النصف الأيمن المكمل له</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 md:gap-6 bg-sky-50 px-4 py-2 rounded-2xl border border-sky-100">
+            <div class="text-center">
+                <span class="block text-xs text-slate-500 font-bold">النقاط</span>
+                <span id="scoreVal" class="text-lg md:text-2xl font-black text-emerald-600">0</span>
+            </div>
+            <div class="h-8 w-px bg-sky-200"></div>
+            <div class="text-center">
+                <span class="block text-xs text-slate-500 font-bold">الأخطاء</span>
+                <span id="mistakesVal" class="text-lg md:text-2xl font-black text-rose-500">0</span>
+            </div>
+            <div class="h-8 w-px bg-sky-200"></div>
+            <div class="text-center">
+                <span class="block text-xs text-slate-500 font-bold">الوقت</span>
+                <span id="timerVal" class="text-lg md:text-2xl font-black text-indigo-600">00:00</span>
+            </div>
+        </div>
+
+        <div>
+            <button onclick="startGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-2xl shadow-lg transition transform active:scale-95 text-sm">
+                إعادة ضبط اللعبة
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Board -->
+    <main class="w-full max-w-5xl flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-6">
+        
+        <!-- Left Halves Column -->
+        <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-5 card-shadow border-4 border-indigo-100 flex flex-col">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b-2 border-indigo-100">
+                <h2 class="text-lg font-black text-indigo-700">الأجزاء اليسرى (البداية)</h2>
+                <span class="bg-indigo-100 text-indigo-700 text-xs px-3 py-1 rounded-full font-bold">النصف الأول</span>
+            </div>
+            <div id="leftContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center">
+                <!-- Dynamically populated left cards -->
+            </div>
+        </div>
+
+        <!-- Right Halves Column -->
+        <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-5 card-shadow border-4 border-emerald-100 flex flex-col">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b-2 border-emerald-100">
+                <h2 class="text-lg font-black text-emerald-700">الأجزاء اليمنى (المكملة)</h2>
+                <span class="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full font-bold">النصف الثاني</span>
+            </div>
+            <div id="rightContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center">
+                <!-- Dynamically populated right cards -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Feedback Toast Notification -->
+    <div id="toastMessage" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 font-bold text-sm">
+        <span id="toastText">رسالة التوجيه</span>
+    </div>
+
+    <!-- Win Modal -->
+    <div id="winModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center card-shadow border-8 border-amber-300">
+            <div class="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4">
+                فوز
+            </div>
+            <h3 class="text-3xl font-black text-slate-800 mb-2">أحسنت يا بطل!</h3>
+            <p class="text-slate-600 mb-6 font-semibold">لقد نجحت في توصيل جميع أجزاء الأشكال الهندسية بشكل صحيح.</p>
+            <div class="bg-amber-50 rounded-2xl p-4 mb-6 flex justify-around text-slate-700 font-bold">
+                <div>
+                    <span class="block text-xs text-slate-400">الوقت المستغرق</span>
+                    <span id="finalTime" class="text-xl text-indigo-600">00:00</span>
+                </div>
+                <div class="w-px bg-amber-200"></div>
+                <div>
+                    <span class="block text-xs text-slate-400">عدد الأخطاء</span>
+                    <span id="finalMistakes" class="text-xl text-rose-500">0</span>
+                </div>
+            </div>
+            <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-2xl shadow-lg transition text-base">
+                العب مرة أخرى
+            </button>
+        </div>
+    </div>
+
+    <footer class="text-slate-500 text-xs font-semibold py-2">
+        لعبة تعليمية مبسطة للأشكال الهندسية للأطفال
+    </footer>
+
+    <script>
+        // Geometric shapes dataset with pure SVG split halves
+        const shapesData = [
+            {
+                id: 'square',
+                name: 'مربع',
+                leftSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><rect x="30" y="25" width="25" height="50" fill="#3b82f6"/><line x1="55" y1="25" x2="55" y2="75" stroke="#1d4ed8" stroke-dasharray="3,3"/></svg>`,
+                rightSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><rect x="45" y="25" width="25" height="50" fill="#3b82f6"/><line x1="45" y1="25" x2="45" y2="75" stroke="#1d4ed8" stroke-dasharray="3,3"/></svg>`
+            },
+            {
+                id: 'circle',
+                name: 'دائرة',
+                leftSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><path d="M50,20 A30,30 0 0,0 50,80 L50,20 Z" fill="#ec4899"/><line x1="50" y1="20" x2="50" y2="80" stroke="#be185d" stroke-dasharray="3,3"/></svg>`,
+                rightSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><path d="M50,20 A30,30 0 0,1 50,80 L50,20 Z" fill="#ec4899"/><line x1="50" y1="20" x2="50" y2="80" stroke="#be185d" stroke-dasharray="3,3"/></svg>`
+            },
+            {
+                id: 'triangle',
+                name: 'مثلث',
+                leftSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><polygon points="50,20 25,80 50,80" fill="#10b981"/><line x1="50" y1="20" x2="50" y2="80" stroke="#047857" stroke-dasharray="3,3"/></svg>`,
+                rightSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><polygon points="50,20 75,80 50,80" fill="#10b981"/><line x1="50" y1="20" x2="50" y2="80" stroke="#047857" stroke-dasharray="3,3"/></svg>`
+            },
+            {
+                id: 'rectangle',
+                name: 'مستطيل',
+                leftSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><rect x="20" y="35" width="30" height="30" fill="#f59e0b"/><line x1="50" y1="35" x2="50" y2="65" stroke="#b45309" stroke-dasharray="3,3"/></svg>`,
+                rightSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><rect x="50" y="35" width="30" height="30" fill="#f59e0b"/><line x1="50" y1="35" x2="50" y2="65" stroke="#b45309" stroke-dasharray="3,3"/></svg>`
+            },
+            {
+                id: 'pentagon',
+                name: 'خماسي',
+                leftSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><polygon points="50,20 25,45 35,80 50,80" fill="#8b5cf6"/><line x1="50" y1="20" x2="50" y2="80" stroke="#6d28d9" stroke-dasharray="3,3"/></svg>`,
+                rightSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><polygon points="50,20 75,45 65,80 50,80" fill="#8b5cf6"/><line x1="50" y1="20" x2="50" y2="80" stroke="#6d28d9" stroke-dasharray="3,3"/></svg>`
+            },
+            {
+                id: 'hexagon',
+                name: 'سداسي',
+                leftSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><polygon points="35,30 50,20 50,80 35,70" fill="#06b6d4"/><line x1="50" y1="20" x2="50" y2="80" stroke="#0e7490" stroke-dasharray="3,3"/></svg>`,
+                rightSvg: `<svg viewBox="0 0 100 100" class="w-full h-24"><polygon points="65,30 50,20 50,80 65,70" fill="#06b6d4"/><line x1="50" y1="20" x2="50" y2="80" stroke="#0e7490" stroke-dasharray="3,3"/></svg>`
+            }
+        ];
+
+        let gameState = {
+            score: 0,
+            mistakes: 0,
+            seconds: 0,
+            timerInterval: null,
+            selectedLeft: null,
+            matchedPairs: [],
+            leftItems: [],
+            rightItems: []
+        };
+
+        function startGame() {
+            clearInterval(gameState.timerInterval);
+            gameState.score = 0;
+            gameState.mistakes = 0;
+            gameState.seconds = 0;
+            gameState.selectedLeft = null;
+            gameState.matchedPairs = [];
+
+            document.getElementById('scoreVal').innerText = '0';
+            document.getElementById('mistakesVal').innerText = '0';
+            document.getElementById('timerVal').innerText = '00:00';
+            document.getElementById('winModal').classList.add('hidden');
+
+            gameState.leftItems = [...shapesData].sort(() => Math.random() - 0.5);
+            gameState.rightItems = [...shapesData].sort(() => Math.random() - 0.5);
+
+            renderBoards();
+            startTimer();
+        }
+
+        function startTimer() {
+            gameState.timerInterval = setInterval(() => {
+                gameState.seconds++;
+                const mins = Math.floor(gameState.seconds / 60).toString().padStart(2, '0');
+                const secs = (gameState.seconds % 60).toString().padStart(2, '0');
+                document.getElementById('timerVal').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function renderBoards() {
+            const leftContainer = document.getElementById('leftContainer');
+            const rightContainer = document.getElementById('rightContainer');
+
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+
+            // Render Left Halves
+            gameState.leftItems.forEach(shape => {
+                const isMatched = gameState.matchedPairs.includes(shape.id);
+                const isSelected = gameState.selectedLeft === shape.id;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border-4 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer relative bg-white ${
+                    isMatched ? 'opacity-40 border-slate-200 bg-slate-50 pointer-events-none' :
+                    isSelected ? 'border-indigo-500 bg-indigo-50 scale-105 pulse-glow' : 'border-indigo-100 hover:border-indigo-300 hover:shadow-md'
+                }`;
+                card.innerHTML = `
+                    <div class="w-full">${shape.leftSvg}</div>
+                    <span class="mt-2 text-xs font-bold text-slate-700">${shape.name} (نصف أيسر)</span>
+                    ${isMatched ? '<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-xl font-black text-emerald-600">تم المطابقة</div>' : ''}
+                `;
+
+                if (!isMatched) {
+                    card.onclick = () => selectLeftCard(shape.id);
+                }
+                leftContainer.appendChild(card);
+            });
+
+            // Render Right Halves
+            gameState.rightItems.forEach(shape => {
+                const isMatched = gameState.matchedPairs.includes(shape.id);
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border-4 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer relative bg-white ${
+                    isMatched ? 'opacity-40 border-slate-200 bg-slate-50 pointer-events-none' : 'border-emerald-100 hover:border-emerald-300 hover:shadow-md'
+                }`;
+                card.innerHTML = `
+                    <div class="w-full">${shape.rightSvg}</div>
+                    <span class="mt-2 text-xs font-bold text-slate-700">${shape.name} (نصف أيمن)</span>
+                    ${isMatched ? '<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-xl font-black text-emerald-600">تم المطابقة</div>' : ''}
+                `;
+
+                if (!isMatched) {
+                    card.onclick = () => selectRightCard(shape.id, card);
+                }
+                rightContainer.appendChild(card);
+            });
+        }
+
+        function selectLeftCard(id) {
+            gameState.selectedLeft = id;
+            renderBoards();
+            showToast('تم اختيار النصف الأيسر، اختر النصف الأيمن المكمل له الآن.');
+        }
+
+        function selectRightCard(id, cardElement) {
+            if (!gameState.selectedLeft) {
+                showToast('الرجاء اختيار النصف الأيسر من القائمة الأولى أولاً.');
+                shakeElement(cardElement);
+                return;
+            }
+
+            if (gameState.selectedLeft === id) {
+                gameState.matchedPairs.push(id);
+                gameState.score += 15;
+                document.getElementById('scoreVal').innerText = gameState.score;
+                gameState.selectedLeft = null;
+
+                showToast('أحسنت! تطابق صحيح.');
+                renderBoards();
+
+                if (gameState.matchedPairs.length === shapesData.length) {
+                    clearInterval(gameState.timerInterval);
+                    setTimeout(showWinModal, 500);
+                }
+            } else {
+                gameState.mistakes++;
+                document.getElementById('mistakesVal').innerText = gameState.mistakes;
+                gameState.selectedLeft = null;
+                showToast('خطأ! هذان النصفان لا ينتميان لنفس الشكل.');
+                shakeElement(cardElement);
+                renderBoards();
+            }
+        }
+
+        function shakeElement(el) {
+            el.classList.add('shake', 'border-rose-400');
+            setTimeout(() => {
+                el.classList.remove('shake', 'border-rose-400');
+            }, 500);
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toastMessage');
+            const toastText = document.getElementById('toastText');
+
+            toastText.innerText = text;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        function showWinModal() {
+            const mins = Math.floor(gameState.seconds / 60).toString().padStart(2, '0');
+            const secs = (gameState.seconds % 60).toString().padStart(2, '0');
+            document.getElementById('finalTime').innerText = `${mins}:${secs}`;
+            document.getElementById('finalMistakes').innerText = gameState.mistakes;
+            document.getElementById('winModal').classList.remove('hidden');
+        }
+
+        window.onload = function() {
+            startGame();
+        };
+    </script>
+</body>
+</html>
